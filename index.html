@@ -1,69 +1,71 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PETA SEBARAN TITIK LOKASI BTS 4G BAKTI</title>
-
-  <!-- Leaflet CSS -->
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    crossorigin=""
-  />
-
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Peta Lokasi Telkomsel (Mode Satelit)</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-omnivore/leaflet-omnivore.min.js"></script>
   <style>
-    html, body {
-      height: 100%;
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background-color: #f9f9f9;
-    }
-
-    header {
-      background-color: #d50000;
-      color: white;
-      text-align: center;
-      padding: 10px;
-      font-size: 18px;
+    html, body, #map { height: 100%; margin: 0; padding: 0; }
+    .leaflet-tooltip {
+      background-color: rgba(255,255,255,0.85);
+      border: 1px solid #d32f2f;
+      border-radius: 4px;
+      padding: 3px 6px;
+      font-size: 13px;
+      color: #d32f2f;
       font-weight: bold;
-    }
-
-    #map {
-      width: 100%;
-      height: calc(100% - 60px);
+      box-shadow: 0 0 4px rgba(0,0,0,0.3);
     }
   </style>
 </head>
 <body>
-  <header>PETA SEBARAN TITIK LOKASI BTS 4G BAKTI</header>
   <div id="map"></div>
-
-  <!-- Leaflet JS -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <!-- Plugin untuk membaca file KML -->
-  <script src="https://unpkg.com/leaflet-omnivore@0.3.4/leaflet-omnivore.min.js"></script>
-
   <script>
-    // Inisialisasi peta
-    var map = L.map('map').setView([-5.38999245, 138.72190524], 8);
+    // Inisialisasi peta di wilayah Asmat
+    var map = L.map('map').setView([-5.5, 138.5], 9);
 
-    // Tambahkan layer dasar (OpenStreetMap)
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
-    }).addTo(map);
+    // 🛰️ Tambahkan layer satelit dari Esri
+    var satellite = L.tileLayer(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.esri.com/">Esri</a>, Maxar, Earthstar Geographics'
+      }
+    ).addTo(map);
 
-    // Gunakan Raw.Githack agar file KML bisa dimuat tanpa error CORS
-    var kmlUrl = 'https://rawcdn.githack.com/komdigiasmat-alt/lokasi/main/lokasi.kml';
+    // 📍 URL file KML (gunakan rawcdn agar bisa dibaca langsung)
+    var kmlUrl = 'https://rawcdn.githack.com/komdigiasmat-alt/lokasi.kml/main/lokasi.kml';
 
-    // Tambahkan file KML ke peta
+    // 🏗️ Ikon tower BTS
+    var towerIcon = L.icon({
+      iconUrl: 'https://cdn-icons-png.flaticon.com/512/484/484167.png',
+      iconSize: [36, 36],
+      iconAnchor: [18, 36],
+      popupAnchor: [0, -36]
+    });
+
+    // Muat KML dan tampilkan titik dengan nama
     omnivore.kml(kmlUrl)
       .on('ready', function() {
         map.fitBounds(this.getBounds());
       })
-      .on('error', function() {
-        alert("⚠️ Gagal memuat file KML. Pastikan lokasi.kml sudah benar di repo.");
+      .on('layeradd', function(e) {
+        var layer = e.layer;
+        if (layer.feature && layer.feature.properties && layer.feature.properties.name) {
+          var latlng = layer.getLatLng ? layer.getLatLng() : null;
+          if (latlng) {
+            map.removeLayer(layer);
+            var marker = L.marker(latlng, { icon: towerIcon }).addTo(map);
+            marker.bindTooltip(layer.feature.properties.name, {
+              permanent: true,
+              direction: 'top',
+              offset: [0, -10]
+            }).openTooltip();
+          }
+        }
       })
       .addTo(map);
   </script>
