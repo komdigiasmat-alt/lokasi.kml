@@ -1,70 +1,43 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Peta Lokasi KML (Mode Satelit)</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <script src="https://unpkg.com/leaflet-omnivore/leaflet-omnivore.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Peta Lokasi KML - KOMDIGI ASMAT</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-omnivore@0.3.4/leaflet-omnivore.min.js"></script>
   <style>
-    html, body, #map { height: 100%; margin: 0; padding: 0; }
-    .leaflet-tooltip {
-      background: rgba(255, 255, 255, 0.85);
-      color: #d32f2f;
-      border: 1px solid #d32f2f;
-      border-radius: 4px;
-      padding: 3px 6px;
-      font-weight: bold;
-      font-size: 13px;
+    body { margin: 0; padding: 0; }
+    #map { height: 100vh; width: 100vw; }
+    .leaflet-control-attribution {
+      font-size: 12px;
     }
   </style>
 </head>
 <body>
   <div id="map"></div>
+
   <script>
-    // Buat peta dan set tampilan awal di Asmat
-    var map = L.map('map').setView([-5.5, 138.5], 10);
+    // Inisialisasi peta
+    var map = L.map('map').setView([-5.39, 138.72], 6); // posisi awal Papua
 
-    // 🛰️ Layer satelit dari Esri
-    L.tileLayer(
-      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', 
-      {
-        maxZoom: 19,
-        attribution: '&copy; <a href="https://www.esri.com/">Esri</a>'
-      }
-    ).addTo(map);
+    // Tambahkan layer dasar (OpenStreetMap)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
 
-    // 📍 URL file KML di GitHub
-    var kmlUrl = 'https://rawcdn.githack.com/komdigiasmat-alt/lokasi.kml/main/lokasi.kml';
+    // URL file KML dari GitHub RAW (pastikan file KML publik)
+    var kmlUrl = 'https://raw.githubusercontent.com/komdigiasmat-alt/lokasi.kml/main/lokasi.kml';
 
-    // 🏗️ Ikon tower BTS
-    var towerIcon = L.icon({
-      iconUrl: 'https://cdn-icons-png.flaticon.com/512/484/484167.png',
-      iconSize: [36, 36],
-      iconAnchor: [18, 36],
-      popupAnchor: [0, -36]
-    });
-
-    // 🚀 Muat file KML
+    // Muat file KML ke dalam peta
     omnivore.kml(kmlUrl)
-      .on('ready', function() {
-        map.fitBounds(this.getBounds());
+      .on('ready', function(e) {
+        map.fitBounds(e.target.getBounds());
       })
-      .on('layeradd', function(e) {
-        var layer = e.layer;
-        if (layer.feature && layer.feature.properties && layer.feature.properties.name) {
-          var latlng = layer.getLatLng ? layer.getLatLng() : null;
-          if (latlng) {
-            map.removeLayer(layer);
-            var marker = L.marker(latlng, { icon: towerIcon }).addTo(map);
-            marker.bindTooltip(layer.feature.properties.name, {
-              permanent: true,
-              direction: 'top',
-              offset: [0, -10]
-            }).openTooltip();
-          }
-        }
+      .on('error', function(e) {
+        alert('Gagal memuat file KML. Pastikan link RAW sudah benar dan file bersifat publik.');
       })
       .addTo(map);
   </script>
