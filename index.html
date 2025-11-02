@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Peta Lokasi KML - KOMDIGI ASMAT</title>
+  <title>Peta Satelit - Lokasi KML KOMDIGI ASMAT</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet-omnivore@0.3.4/leaflet-omnivore.min.js"></script>
@@ -13,7 +13,10 @@
     .leaflet-popup-content {
       font-size: 14px;
       font-weight: bold;
-      color: #333;
+      color: #222;
+    }
+    .leaflet-control-layers {
+      font-size: 13px;
     }
   </style>
 </head>
@@ -21,40 +24,55 @@
   <div id="map"></div>
 
   <script>
-    // Inisialisasi peta (fokus Papua)
+    // Inisialisasi peta (tengah Papua)
     var map = L.map('map').setView([-5.39, 138.72], 6);
 
-    // Layer dasar OpenStreetMap
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    // Layer dasar: citra satelit Esri
+    var esriSatelit = L.tileLayer(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      {
+        maxZoom: 19,
+        attribution: 'Tiles © Esri & contributors'
+      }
+    ).addTo(map);
+
+    // Tambahan: layer jalan (opsional)
+    var osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
+    });
 
-    // URL file KML (pastikan file bersifat publik dan gunakan link RAW)
+    // Kontrol untuk ganti tampilan
+    var baseMaps = {
+      "🛰️ Satelit": esriSatelit,
+      "🗺️ Peta Jalan": osmLayer
+    };
+    L.control.layers(baseMaps).addTo(map);
+
+    // URL file KML (gunakan link RAW GitHub)
     var kmlUrl = 'https://raw.githubusercontent.com/komdigiasmat-alt/lokasi.kml/main/lokasi.kml';
 
-    // Muat file KML ke peta
+    // Muat file KML + tampilkan titik dan nama
     var customLayer = L.geoJson(null, {
       onEachFeature: function (feature, layer) {
-        // Jika KML punya nama / deskripsi, tampilkan di popup
         var name = feature.properties.name || "Tanpa Nama";
         var desc = feature.properties.description || "";
         layer.bindPopup("<b>" + name + "</b><br>" + desc);
       },
       pointToLayer: function (feature, latlng) {
-        // Ubah setiap titik menjadi marker
         return L.marker(latlng, {
           title: feature.properties.name
         });
       }
     });
 
+    // Gunakan omnivore untuk memuat file KML
     omnivore.kml(kmlUrl, null, customLayer)
       .on('ready', function (e) {
         map.fitBounds(customLayer.getBounds());
       })
       .on('error', function (e) {
-        alert("⚠️ Gagal memuat file KML.\nPeriksa apakah link RAW benar dan file bersifat publik.");
+        alert("⚠️ Gagal memuat file KML.\nPeriksa apakah link RAW benar dan file publik.");
       })
       .addTo(map);
   </script>
