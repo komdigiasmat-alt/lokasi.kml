@@ -10,8 +10,10 @@
   <style>
     body { margin: 0; padding: 0; }
     #map { height: 100vh; width: 100vw; }
-    .leaflet-control-attribution {
-      font-size: 12px;
+    .leaflet-popup-content {
+      font-size: 14px;
+      font-weight: bold;
+      color: #333;
     }
   </style>
 </head>
@@ -19,25 +21,40 @@
   <div id="map"></div>
 
   <script>
-    // Inisialisasi peta
-    var map = L.map('map').setView([-5.39, 138.72], 6); // posisi awal Papua
+    // Inisialisasi peta (fokus Papua)
+    var map = L.map('map').setView([-5.39, 138.72], 6);
 
-    // Tambahkan layer dasar (OpenStreetMap)
+    // Layer dasar OpenStreetMap
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '© OpenStreetMap contributors'
     }).addTo(map);
 
-    // URL file KML dari GitHub RAW (pastikan file KML publik)
+    // URL file KML (pastikan file bersifat publik dan gunakan link RAW)
     var kmlUrl = 'https://raw.githubusercontent.com/komdigiasmat-alt/lokasi.kml/main/lokasi.kml';
 
-    // Muat file KML ke dalam peta
-    omnivore.kml(kmlUrl)
-      .on('ready', function(e) {
-        map.fitBounds(e.target.getBounds());
+    // Muat file KML ke peta
+    var customLayer = L.geoJson(null, {
+      onEachFeature: function (feature, layer) {
+        // Jika KML punya nama / deskripsi, tampilkan di popup
+        var name = feature.properties.name || "Tanpa Nama";
+        var desc = feature.properties.description || "";
+        layer.bindPopup("<b>" + name + "</b><br>" + desc);
+      },
+      pointToLayer: function (feature, latlng) {
+        // Ubah setiap titik menjadi marker
+        return L.marker(latlng, {
+          title: feature.properties.name
+        });
+      }
+    });
+
+    omnivore.kml(kmlUrl, null, customLayer)
+      .on('ready', function (e) {
+        map.fitBounds(customLayer.getBounds());
       })
-      .on('error', function(e) {
-        alert('Gagal memuat file KML. Pastikan link RAW sudah benar dan file bersifat publik.');
+      .on('error', function (e) {
+        alert("⚠️ Gagal memuat file KML.\nPeriksa apakah link RAW benar dan file bersifat publik.");
       })
       .addTo(map);
   </script>
